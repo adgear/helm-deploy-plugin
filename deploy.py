@@ -81,45 +81,6 @@ def process_configs():
         print("\033[1;31;40m Value file {} does not exists. Exiting\033[0m".format(other_args[i+1]))
         sys.exit(1)
 
-def get_local(sets):
-  template = generate_template()
-  print("Running: "  + template.format("template", sets["dry"]))
-  cmd = template.format("template", sets["wet"])
-  data = run_command(cmd)
-  if data["retcode"] != 0:
-    print("STDOUT:\n {}".format(data["out"]))
-    print("STDERR:\n {}".format(data["err"]))
-    print("Cant generate local manifest")
-    sys.exit(1)
-  sorted_data = list(yaml.load_all(data["out"],yaml.Loader))
-  sorted_data = list(filter(None, sorted_data))
-  sorted_data.sort(key=lambda x: x["kind"]+"_"+x["metadata"]["name"])
-  with io.open('/tmp/local', 'w', encoding='utf8') as outfile:
-    yaml.dump(sorted_data, outfile, default_flow_style=False, allow_unicode=True)
-
-def get_remote():
-  # create an empty file to satisfy git requirements
-  with io.open('/tmp/remote', 'w', encoding='utf8') as outfile:
-    yaml.dump("", outfile, default_flow_style=False, allow_unicode=True)
-
-  cmd = "{} get manifest {} -n {} {}".format(
-            helm_exe,
-            args.name,
-            namespace,
-            " --kube-context {}".format(context) if context != "" else " ")
-  print("Running: "  + cmd)
-  data = run_command(cmd)
-  if data["retcode"] != 0:
-    print("STDOUT:\n {}".format(data["out"]))
-    print("STDERR:\n {}".format(data["err"]))
-    print("Remote release not found")
-    return
-  sorted_data = list(yaml.load_all(data["out"],yaml.Loader))
-  sorted_data = list(filter(None, sorted_data))
-  sorted_data.sort(key=lambda x: x["kind"]+"_"+x["metadata"]["name"])
-  with io.open('/tmp/remote', 'w', encoding='utf8') as outfile:
-    yaml.dump(sorted_data, outfile, default_flow_style=False, allow_unicode=True)
-
 def install(args,sets):
   print("Running DEPLOY")
   sets["wet"] += "--set partition={}".format(args.canary)
@@ -134,11 +95,12 @@ def diff(args,sets):
   print("Running DIFF")
   os.environ["HELM_DEBUG"] = "false"
   print("Debug Off, diff cant be run with, b/o output yaml get corrupted")
-  get_local(sets)
-  get_remote()
+  sets["wet"] += "--set partition={}".format(args.canary)
+  sets["dry"] += "--set partition={}".format(args.canary)
+  template = generate_template()
   return {
-            "dry": "git diff --color /tmp/remote /tmp/local || true",
-            "wet": "git diff --color /tmp/remote /tmp/local || true"
+            "dry": template.format("diff upgrade", sets["dry"]),
+            "wet": template.format("diff upgrade", sets["wet"])
           }
 
 def dispatch(args):

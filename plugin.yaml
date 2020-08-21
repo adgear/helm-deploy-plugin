@@ -1,6 +1,6 @@
 ---
 name: "deploy"
-version: "0.6.8"
+version: "0.7.0"
 usage: "Integrate vault with Helm"
 description: |-
   This plugin provides vault secrets to Helm.

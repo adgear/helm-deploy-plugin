@@ -1,9 +1,14 @@
 ## helm-deploy-plugin
 This plugin supports only helm3.
 
+### Prerequisites
+```bash
+helm plugin install https://github.com/databus23/helm-diff
+pip install pyyaml oyaml
+```
+
 ### Install
 ```bash
-pip install pyyaml oyaml
 helm plugin install https://github.com/adgear/helm-deploy-plugin.git --version master
 ```
 
@@ -30,7 +35,6 @@ helm deploy --name <RELEASE> -n <NAMESPACE> --kube-context <CONTEXT> -f values.y
 ```bash
 helm deploy --name <RELEASE> -n <NAMESPACE> --kube-context <CONTEXT> -f values.yaml --wet
 ```
-
 8. Remove release
 ```bash
 helm delete <RELEASE>  -n <NAMESPACE> --kube-context <CONTEXT>
